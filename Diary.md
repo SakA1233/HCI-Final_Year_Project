@@ -5,3 +5,5 @@
 6-9th: reserched more articles and also decided what to my prject on. also started writing my plan for my project.
 
 9-11th: worked on and finished project plan
+
+14th-15th: written a questiaire for feedback on accessability and usability needs for the elderly. also going through design theories for the website.
