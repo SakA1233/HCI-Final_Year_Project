@@ -7,3 +7,7 @@
 9-11th: worked on and finished project plan
 
 14th-15th: written a questiaire for feedback on accessability and usability needs for the elderly. also going through design theories for the website.
+
+16th-18th: received feedback on the questionaire. and started learning how to use figma/canva
+
+21st: stated to design my website
