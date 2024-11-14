@@ -1,9 +1,10 @@
-import Image from 'next/image';
-import Head from 'next/head';
+import React from "react";
+import NavbarComponent from "@/app/components/navBar";
 
 export default function Home() {
   return (
-    <><h1>this is the home page</h1>
-      </>
+    <>
+      <NavbarComponent />
+    </>
   );
 }
