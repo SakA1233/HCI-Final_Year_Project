@@ -1,9 +1,9 @@
 import React from "react";
 
 const games = [
-  { id: 1, title: "Memory Match", description: "Sharpen your memory with this matching game.", image: "/images/memory_game_image.png" },
-  { id: 2, title: "Word Puzzle", description: "Test your vocabulary with exciting word puzzles.", image: "/images/word-puzzle.png" },
-  { id: 3, title: "Math Challenge", description: "Enhance your math skills with fun challenges.", image: "/images/math-challenge.png" },
+  { id: 1, title: "Memory Match", description: "Sharpen your memory with this matching game.", image: "/images/memory_game_image2.png" },
+  { id: 2, title: "Word Puzzle", description: "Test your vocabulary with exciting word puzzles.", image: "/images/word_puzzle_image.png" },
+  { id: 3, title: "Math Challenge", description: "Enhance your math skills with fun challenges.", image: "/images/number_image.png" },
 ];
 
 export default function GamesPage() {
@@ -25,8 +25,7 @@ export default function GamesPage() {
             <img
               src={game.image}
               alt={game.title}
-              className="w-full h-48 object-cover"
-            />
+              className="w-full h-56 object-cover object-center rounded-lg"            />
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-2">{game.title}</h2>
               <p className="text-gray-700">{game.description}</p>
