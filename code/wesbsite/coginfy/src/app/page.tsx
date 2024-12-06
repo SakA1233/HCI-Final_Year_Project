@@ -49,6 +49,15 @@ export default function Home() {
                 Log In
               </Link>
             </div>
+
+            {/*Image*/}
+            <div className="mt-12">
+              <img
+                src="../images/brain.png"
+                alt="Cognitive Growth Illustration"
+                className="w-full max-w-md mx-auto rounded-lg shadow-md"
+              />
+            </div>
           </div>
         </main>
         <Footer />
