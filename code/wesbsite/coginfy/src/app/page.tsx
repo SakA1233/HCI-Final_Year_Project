@@ -4,6 +4,7 @@ import React from "react";
 import Head from "next/head";
 import Navbar from "@/app/components/navBar";
 import Footer from "@/app/components/footer";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -26,6 +27,28 @@ export default function Home() {
               Explore our games and tools designed to enhance cognitive skills
               and empower your mind.
             </p>
+
+            {/* Buttons */}
+            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:space-x-6 justify-center">
+              <Link
+                href="/play"
+                className="bg-blue-100 text-blue-700 text-lg font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-200 transition duration-300"
+              >
+                Play Games
+              </Link>
+              <Link
+                href="/about"
+                className="bg-blue-100 text-blue-700 text-lg font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-200 transition duration-300"
+              >
+                Learn More
+              </Link>
+              <Link
+                href="/login"
+                className="bg-blue-100 text-blue-700 text-lg font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-200 transition duration-300"
+              >
+                Log In
+              </Link>
+            </div>
           </div>
         </main>
         <Footer />
