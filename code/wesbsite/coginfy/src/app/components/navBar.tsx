@@ -11,8 +11,8 @@ const NavbarComponent = () => {
         </Link>
         <ul className="flex space-x-6 text-lg">
           <li>
-            <Link href="#get-started" className="hover:underline">
-              Get Started
+            <Link href="/play" className="hover:underline">
+              Play
             </Link>
           </li>
           <li>
@@ -21,7 +21,7 @@ const NavbarComponent = () => {
             </Link>
           </li>
           <li>
-            <Link href="#login" className="hover:underline">
+            <Link href="/login" className="hover:underline">
               Log In
             </Link>
           </li>
