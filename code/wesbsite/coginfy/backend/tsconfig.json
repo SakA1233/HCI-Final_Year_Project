@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "ES2017",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "outDir": "dist",
+      "baseUrl": "./",
+      "paths": {
+        "@config/*": ["config/*"],
+        "@models/*": ["config/models/*"],
+        "@routes/*": ["config/routes/*"]
+      }
+    },
+    "include": ["**/*.ts"],
+    "exclude": ["node_modules"]
+  }
+  
