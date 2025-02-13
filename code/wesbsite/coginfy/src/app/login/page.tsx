@@ -1,45 +1,41 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
-import NavbarComponent from "../components/navBar";
+import { useRouter } from "next/navigation"; // For navigation
+import axios from "axios"; // For HTTP requests
+import NavbarComponent from "../components/navBar"; // Navbar component
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  // States for input fields, errors, and loading
+  const [email, setEmail] = useState(""); // Email input
+  const [password, setPassword] = useState(""); // Password input
+  const [error, setError] = useState<string | null>(null); // Error message
+  const [loading, setLoading] = useState(false); // Loading state
+  const router = useRouter(); // For page redirection
 
+  // Handles form submission
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+    e.preventDefault(); // Stop default form behavior
+    setError(null); // Reset errors
+    setLoading(true); // Show loading
 
     try {
-      console.log("Sending login request...");
+      // Send login request
       const response = await axios.post(
         "http://localhost:5001/api/auth/login",
-        {
-          email,
-          password,
-        }
+        { email, password }
       );
 
-      console.log("Login successful:", response.data);
-
+      // Save user data and redirect to play page
       localStorage.setItem("user", JSON.stringify(response.data.user));
-
       router.push("/play");
     } catch (err: any) {
-      console.error("Login failed:", err.response?.data || err.message);
+      // Show error if login fails
       setError(
-        err.response?.data?.message ||
-          "Unable to login. Please check your credentials and try again."
+        err.response?.data?.message || "Invalid login. Please try again."
       );
     } finally {
-      setLoading(false);
+      setLoading(false); // Hide loading
     }
   };
 
@@ -50,11 +46,12 @@ export default function LoginPage() {
         <div className="bg-white p-8 shadow-md rounded-lg max-w-md w-full">
           <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 
-          {/* Display error message */}
+          {/* Show error message */}
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
+          {/* Login form */}
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email Input */}
+            {/* Email input */}
             <div>
               <label htmlFor="email" className="block text-gray-700">
                 Email
@@ -70,7 +67,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password Input */}
+            {/* Password input */}
             <div>
               <label htmlFor="password" className="block text-gray-700">
                 Password
@@ -86,17 +83,17 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit button */}
             <button
               type="submit"
               className={`w-full py-2 rounded-lg transition ${
                 loading
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                  ? "bg-blue-300 cursor-not-allowed" // Disabled button
+                  : "bg-blue-500 hover:bg-blue-600 text-white" // Active button
               }`}
               disabled={loading}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Logging in..." : "Login"} {/* Button text */}
             </button>
           </form>
         </div>
