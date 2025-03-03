@@ -29,26 +29,23 @@ const games = [
 // Component for the Games page
 export default function GamesPage() {
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {" "}
-      {/* Main container with background color and minimum height */}
+    <div className="flex flex-col min-h-screen bg-background text-foreground transition duration-300">
       {/* Header section */}
-      <header className="bg-blue-100 text-gray-800 py-6 px-8">
-        <h1 className="text-4xl font-bold text-center">Our Games</h1>{" "}
-        {/* Page title */}
+      <header className="bg-navbar-footer dark:bg-navbar-footer-dark text-heading dark:text-white py-6 px-8 transition duration-300">
+        <h1 className="text-4xl font-bold text-center">Our Games</h1>
         <p className="text-lg text-center mt-2 max-w-2xl mx-auto">
           Explore our games designed to enhance cognitive skills and provide
           hours of fun.
         </p>
       </header>
+
       {/* Main content section */}
       <main className="max-w-6xl mx-auto py-12 px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Loop through the games array and display each game */}
         {games.map((game) => (
           <Link
             key={game.id} // Unique key for each game
             href={game.route} // Link to the game's specific page
-            className="block bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow"
+            className="block bg-white dark:bg-darkCard shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow"
           >
             {/* Game image */}
             <img
@@ -58,10 +55,12 @@ export default function GamesPage() {
             />
             {/* Game details */}
             <div className="p-6">
-              <h2 className="text-2xl font-bold mb-2">{game.title}</h2>{" "}
               {/* Game title */}
-              <p className="text-gray-700">{game.description}</p>{" "}
+              <h2 className="text-2xl font-bold mb-2 text-black">{game.title}</h2>
               {/* Game description */}
+              <p className="text-gray-700 dark:text-gray-300">
+                {game.description}
+              </p>
             </div>
           </Link>
         ))}
