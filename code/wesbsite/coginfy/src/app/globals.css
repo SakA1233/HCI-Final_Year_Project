@@ -2,21 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light Mode Defaults */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --navbar-footer: #cce7ff; /* Light blue */
+  --text-color: #171717; /* Default dark text */
+  --heading-color: #171717; /* Default dark headers */
+  --button-bg: #cce7ff; /* Light blue buttons */
+  --button-text: #171717; /* Dark text on buttons */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark Mode */
+.dark {
+  --background: #181818; /* Dark grey background */
+  --foreground: #ffffff;
+  --navbar-footer: #001f3f; /* Dark blue navbar/footer */
+  --text-color: #ffffff; /* White text */
+  --heading-color: #ffffff; /* White headers */
+  --button-bg: #001f3f; /* Dark blue buttons */
+  --button-text: #ffffff; /* White button text */
 }
 
+/* Apply the colors globally */
 body {
-  color: var(--foreground);
+  color: var(--text-color);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Ensure headings switch colors */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading-color);
+}
+
+/* Navbar & Footer Styling */
+.navbar, .footer {
+  background-color: var(--navbar-footer);
+  transition: background-color 0.3s ease-in-out;
+}
+
+/* Navbar links should always be visible */
+.navbar a, .navbar button {
+  color: var(--text-color);
+  transition: color 0.3s ease-in-out;
+}
+
+/* Footer text should also adapt */
+.footer p, .footer a {
+  color: var(--text-color);
+  transition: color 0.3s ease-in-out;
+}
+
+/* ✅ Button Styling: Matches Navbar/Footer */
+button, .btn {
+  background-color: var(--button-bg); /* Matches navbar/footer */
+  color: var(--button-text);
+  padding: 10px 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover, .btn:hover {
+  background-color: #003366; /* Slightly darker blue on hover */
+}
