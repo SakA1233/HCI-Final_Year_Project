@@ -1,35 +1,45 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link"; // For navigation links
-import { useRouter } from "next/navigation"; // For redirection
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const NavbarComponent = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track if user is logged in
-  const router = useRouter(); // For navigation
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const router = useRouter();
 
-  // Check if the user is logged in when the page loads
+  // Load user authentication & dark mode state
   useEffect(() => {
     const user = localStorage.getItem("user");
-    setIsLoggedIn(!!user); // Set to true if user exists
+    setIsLoggedIn(!!user);
+
+    const theme = localStorage.getItem("theme");
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
   }, []);
 
-  // Log out the user
-  const handleLogout = () => {
-    localStorage.removeItem("user"); // Clear user info
-    setIsLoggedIn(false); // Update state
-    router.push("/login"); // Go to login page
+  // Toggle Dark Mode
+  const toggleDarkMode = () => {
+    if (darkMode) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    setDarkMode(!darkMode);
   };
 
   return (
-    <header className="bg-blue-100 py-4 px-8">
+    <header className="navbar py-4 px-8 transition duration-300">
       <nav className="flex justify-between items-center">
-        {/* Link to the home page */}
         <Link href="/" className="text-3xl font-bold hover:underline">
           Cognify
         </Link>
 
-        {/* Navigation links */}
         <ul className="flex space-x-6 text-lg">
           <li>
             <Link href="/play" className="hover:underline">
@@ -42,12 +52,15 @@ const NavbarComponent = () => {
             </Link>
           </li>
 
-          {/* Show Log Out if logged in, Log In otherwise */}
           {isLoggedIn ? (
             <li>
               <button
-                onClick={handleLogout}
-                className="text-red-500 hover:underline"
+                onClick={() => {
+                  localStorage.removeItem("user");
+                  setIsLoggedIn(false);
+                  router.push("/login");
+                }}
+                className="text-red-500 hover:underline dark:text-red-400"
               >
                 Log Out
               </button>
@@ -59,6 +72,16 @@ const NavbarComponent = () => {
               </Link>
             </li>
           )}
+
+          {/* Dark Mode Toggle */}
+          <li>
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-darkBg text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 transition duration-300"
+            >
+              {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+            </button>
+          </li>
         </ul>
       </nav>
     </header>

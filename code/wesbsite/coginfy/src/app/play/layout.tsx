@@ -1,13 +1,13 @@
-import React from 'react';
-import Navbar from '@/app/components/navBar';
-import Footer from '@/app/components/footer';
+import React from "react";
 
-export default function playLayout({ children }: { children: React.ReactNode }) {
+export default function playLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       <main className="flex-grow">{children}</main>
-      <Footer />
     </div>
   );
 }

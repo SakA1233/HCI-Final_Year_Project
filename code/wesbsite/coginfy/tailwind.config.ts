@@ -9,8 +9,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        lightBg: "#ffffff", // Default background
+        darkBg: "#0a0a36", // Dark mode background (deep blue)
+        lightText: "#171717", // Default text
+        darkText: "#ffffff", // Text in dark mode
+        darkNav: "#082567", // Deep navy for navbar and footer
       },
     },
   },

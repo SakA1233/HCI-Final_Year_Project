@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation"; // For navigation
 import axios from "axios"; // For HTTP requests
-import NavbarComponent from "../components/navBar"; // Navbar component
 
 export default function LoginPage() {
   // States for input fields, errors, and loading
@@ -25,7 +24,6 @@ export default function LoginPage() {
         "http://localhost:5001/api/auth/login",
         { email, password }
       );
-
       // Save user data and redirect to play page
       localStorage.setItem("user", JSON.stringify(response.data.user));
       router.push("/play");
@@ -41,10 +39,11 @@ export default function LoginPage() {
 
   return (
     <>
-      <NavbarComponent />
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 shadow-md rounded-lg max-w-md w-full">
-          <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition duration-300">
+        <div className="bg-white dark:bg-darkCard p-8 shadow-md rounded-lg max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-6 text-center text-black">
+            Login
+          </h1>
 
           {/* Show error message */}
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -53,13 +52,16 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email input */}
             <div>
-              <label htmlFor="email" className="block text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-gray-700 dark:text-gray-300"
+              >
                 Email
               </label>
               <input
                 type="email"
                 id="email"
-                className="w-full border-gray-300 rounded-lg p-2"
+                className="w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-gray-900 dark:text-white rounded-lg p-2"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -69,13 +71,16 @@ export default function LoginPage() {
 
             {/* Password input */}
             <div>
-              <label htmlFor="password" className="block text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-gray-700 dark:text-gray-300"
+              >
                 Password
               </label>
               <input
                 type="password"
                 id="password"
-                className="w-full border-gray-300 rounded-lg p-2"
+                className="w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-darkBg text-gray-900 dark:text-white rounded-lg p-2"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -88,8 +93,8 @@ export default function LoginPage() {
               type="submit"
               className={`w-full py-2 rounded-lg transition ${
                 loading
-                  ? "bg-blue-300 cursor-not-allowed" // Disabled button
-                  : "bg-blue-500 hover:bg-blue-600 text-white" // Active button
+                  ? "bg-blue-300 dark:bg-navbar-footer-dark cursor-not-allowed" // Disabled button
+                  : "bg-blue-500 dark:bg-navbar-footer-dark hover:bg-blue-600 dark:hover:bg-darkBg text-white" // Active button
               }`}
               disabled={loading}
             >
