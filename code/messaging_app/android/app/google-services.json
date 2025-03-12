@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "164426326641",
+    "project_id": "messagingapplumina",
+    "storage_bucket": "messagingapplumina.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164426326641:android:4a4c6a93f6a4eb182e31d0",
+        "android_client_info": {
+          "package_name": "com.example.messaging_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNtJN-HaoawJeYAW4doUruyMwcsM-wTTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
