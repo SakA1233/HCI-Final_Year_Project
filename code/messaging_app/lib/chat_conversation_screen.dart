@@ -13,6 +13,7 @@ class ChatConversationScreen extends StatefulWidget {
 
 class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +21,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       appBar: AppBar(title: const Text('Chat Conversation')),
       body: Column(
         children: [
+          // Display messages in real-time
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream:
-                  FirebaseFirestore.instance
+                  firestore
                       .collection('conversations')
                       .doc(widget.chatId)
                       .collection('messages')
@@ -35,23 +37,46 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 }
 
                 var messages = snapshot.data!.docs;
+
                 return ListView.builder(
-                  reverse: true,
+                  reverse: true, // Newest messages at the bottom
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     var message =
                         messages[index].data() as Map<String, dynamic>;
-                    String text = message['text'] ?? '';
-                    var timestamp =
-                        message['timestamp']?.toDate().toString() ?? '';
+                    bool isMine = message['isMine'] ?? false;
 
-                    return ListTile(
-                      title: Text(text),
-                      subtitle: Text(
-                        timestamp,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+                    return Align(
+                      alignment:
+                          isMine ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(
+                          vertical: 5,
+                          horizontal: 10,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isMine ? Colors.blueAccent : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              message['text'] ?? '',
+                              style: TextStyle(
+                                color: isMine ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              message['timestamp']?.toDate().toString() ?? '',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -60,6 +85,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               },
             ),
           ),
+
+          // Message input field
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -74,7 +101,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: const Icon(Icons.send, color: Colors.blue),
                   onPressed: () => sendMessage(),
                 ),
               ],
@@ -89,22 +116,22 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     String messageText = _messageController.text.trim();
     if (messageText.isEmpty) return;
 
-    // Add new message in subcollection
-    await FirebaseFirestore.instance
+    await firestore
         .collection('conversations')
         .doc(widget.chatId)
         .collection('messages')
-        .add({'text': messageText, 'timestamp': FieldValue.serverTimestamp()});
+        .add({
+          'text': messageText,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isMine': true, // Placeholder for now
+        });
 
     // Update conversation's lastMessage and set unread to true
-    await FirebaseFirestore.instance
-        .collection('conversations')
-        .doc(widget.chatId)
-        .update({
-          'lastMessage': messageText,
-          'timestamp': FieldValue.serverTimestamp(),
-          'unread': true,
-        });
+    await firestore.collection('conversations').doc(widget.chatId).update({
+      'lastMessage': messageText,
+      'timestamp': FieldValue.serverTimestamp(),
+      'unread': true,
+    });
 
     _messageController.clear();
   }

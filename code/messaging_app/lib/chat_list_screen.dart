@@ -59,8 +59,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ? const Icon(Icons.circle, color: Colors.blue, size: 10)
                         : null,
                 onTap: () async {
-                  // Mark as read before navigating
                   try {
+                    // Mark as read before navigating
                     await firestore
                         .collection('conversations')
                         .doc(chat.id)
@@ -87,15 +87,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Create a new conversation
           try {
+            // Create a new conversation document
             var newChat = await firestore.collection('conversations').add({
               'name': 'New Chat',
               'lastMessage': 'Hello there!',
               'timestamp': FieldValue.serverTimestamp(),
               'unread': true,
             });
+
             print('Created new chat: ${newChat.id}');
+
+            // Immediately create a message doc in the 'messages' subcollection
+            await firestore
+                .collection('conversations')
+                .doc(newChat.id)
+                .collection('messages')
+                .add({
+                  'text': 'Hello there!',
+                  'timestamp': FieldValue.serverTimestamp(),
+                  'isMine': false,
+                });
           } catch (e) {
             print('Error creating new chat: $e');
           }
