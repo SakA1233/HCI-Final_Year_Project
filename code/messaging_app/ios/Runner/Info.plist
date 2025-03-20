@@ -47,5 +47,32 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<!-- Firebase and Google Sign-In Configuration -->
+	<key>UIAppFonts</key>
+	<array>
+		<!-- Add custom font files here if any -->
+	</array>
+
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+
+	<!-- Google Sign-In Config -->
+	<key>GIDClientID</key>
+	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string> <!-- Replace with your actual client ID from the Firebase Console -->
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.164426326641-fuf3ti4krbkn1m3oahc9ivb21n23th41</string> <!-- Replace with your actual client ID -->
+			</array>
+		</dict>
+	</array>
+
+	<!-- Firebase Analytics -->
+	<key>FirebaseAnalyticsCollectionEnabled</key>
+	<true/>
 </dict>
 </plist>
