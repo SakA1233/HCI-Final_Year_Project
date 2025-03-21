@@ -47,5 +47,24 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<key>UIAppFonts</key>
+	<array>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>GIDClientID</key>
+	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.164426326641-fuf3ti4krbkn1m3oahc9ivb21n23th41</string>
+			</array>
+		</dict>
+	</array>
+	<key>FirebaseAnalyticsCollectionEnabled</key>
+	<true/>
 </dict>
 </plist>
