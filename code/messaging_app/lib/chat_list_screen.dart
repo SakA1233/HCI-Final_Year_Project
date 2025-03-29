@@ -12,13 +12,11 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // Keep track of which bottom nav tab is selected
   int _currentIndex = 0;
 
-  // Show chat list if index=0, else show a profile placeholder
+  // Show a profile placeholder
   Widget _buildBody() {
     if (_currentIndex == 0) {
-      // === Existing Chat List code ===
       return StreamBuilder<QuerySnapshot>(
         stream:
             firestore
