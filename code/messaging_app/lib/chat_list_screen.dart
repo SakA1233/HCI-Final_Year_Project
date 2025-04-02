@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'chat_conversation_screen.dart';
+import 'settings_screen.dart';
+import 'theme_provider.dart';
+import 'text_to_speech_service.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({Key? key}) : super(key: key);
@@ -11,10 +15,29 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final TextToSpeechService _tts = TextToSpeechService();
 
   int _currentIndex = 0;
 
-  // Show a profile placeholder
+  @override
+  void initState() {
+    super.initState();
+    _initTts();
+  }
+
+  // Initialize text-to-speech
+  Future<void> _initTts() async {
+    await _tts.initialize();
+  }
+
+  // Speak text if TTS is enabled
+  void _speakIfEnabled(String text) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    if (themeProvider.isTextToSpeechEnabled) {
+      _tts.speak(text);
+    }
+  }
+
   Widget _buildBody() {
     if (_currentIndex == 0) {
       return StreamBuilder<QuerySnapshot>(
@@ -60,6 +83,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ? const Icon(Icons.circle, color: Colors.blue, size: 10)
                         : null,
                 onTap: () async {
+                  // Speak the conversation name if TTS is enabled
+                  _speakIfEnabled("Opening chat with $conversationName");
+
                   try {
                     // Mark as read before navigating
                     await firestore
@@ -87,21 +113,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
         },
       );
     } else {
-      // placeholder for profile tab
-      return const Center(
-        child: Text(
-          'Profile Screen (Coming Soon)',
-          style: TextStyle(fontSize: 20),
-        ),
-      );
+      return const SettingsScreen();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat List')),
+      appBar: AppBar(
+        title: Text(_currentIndex == 0 ? 'Chat List' : 'Settings'),
+      ),
       body: _buildBody(),
+      // Add a floating action button only on the Chats tab
       floatingActionButton:
           _currentIndex == 0
               ? FloatingActionButton(
@@ -135,10 +158,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 child: const Icon(Icons.add),
               )
               : null,
-      // BottomNavigationBar
+      // Updated BottomNavigationBar with Settings instead of Profile
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.blueAccent,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           setState(() => _currentIndex = index);
@@ -149,8 +172,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
             label: 'Chats',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),
