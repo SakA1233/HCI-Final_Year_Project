@@ -6,11 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'theme_provider.dart';
 import 'firebase_options.dart';
+import 'chat_bot_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await _initializePlugins();
+
+  // Initialize and start the ChatBotService
+  ChatBotService().startListening();
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
