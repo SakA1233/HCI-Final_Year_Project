@@ -5,6 +5,7 @@ import 'chat_conversation_screen.dart';
 import 'settings_screen.dart';
 import 'theme_provider.dart';
 import 'text_to_speech_service.dart';
+import 'backend_service.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({Key? key}) : super(key: key);
@@ -17,6 +18,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final TextToSpeechService _tts = TextToSpeechService();
   final TextEditingController _chatNameController = TextEditingController();
+  final BackendService _backendService = BackendService();
 
   // Keep track of which bottom nav tab is selected
   int _currentIndex = 0;
@@ -80,18 +82,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  // Update chat name in Firestore
+  // Update chat name in Firestore via backend service
   Future<void> _updateChatName(String chatId, String newName) async {
     if (newName.isEmpty) return;
 
     try {
-      await firestore.collection('conversations').doc(chatId).update({
-        'name': newName,
-      });
+      final success = await _backendService.updateChatName(chatId, newName);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Chat renamed to "$newName"')));
+      if (success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Chat renamed to "$newName"')));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to rename chat')));
+      }
     } catch (e) {
       print('Error updating chat name: $e');
       ScaffoldMessenger.of(
@@ -124,29 +130,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     if (confirmed == true) {
       try {
-        // Delete the messages subcollection first
-        var messages =
-            await firestore
-                .collection('conversations')
-                .doc(chatId)
-                .collection('messages')
-                .get();
+        final success = await _backendService.deleteChat(chatId);
 
-        for (var message in messages.docs) {
-          await firestore
-              .collection('conversations')
-              .doc(chatId)
-              .collection('messages')
-              .doc(message.id)
-              .delete();
+        if (success) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Chat deleted')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete chat')),
+          );
         }
-
-        // Then delete the conversation document
-        await firestore.collection('conversations').doc(chatId).delete();
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Chat deleted')));
       } catch (e) {
         print('Error deleting chat: $e');
         ScaffoldMessenger.of(
@@ -217,7 +211,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   );
                 },
                 onDismissed: (direction) async {
-                  _confirmDeleteChat(chat.id);
+                  await _confirmDeleteChat(chat.id);
                 },
                 child: GestureDetector(
                   onLongPress: () {
@@ -395,35 +389,24 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  // Create a new chat with a custom name
+  // Create a new chat with a custom name using backend service
   Future<void> _createNewChat(String chatName) async {
     if (chatName.isEmpty) {
       chatName = 'New Chat';
     }
 
     try {
-      // Create a new conversation document
-      var newChat = await firestore.collection('conversations').add({
-        'name': chatName,
-        'lastMessage': 'Chat created',
-        'timestamp': FieldValue.serverTimestamp(),
-        'unread': true,
-      });
+      final chatId = await _backendService.createChat(chatName);
 
-      // Immediately create a message doc in the 'messages' subcollection
-      await firestore
-          .collection('conversations')
-          .doc(newChat.id)
-          .collection('messages')
-          .add({
-            'text': 'Welcome to $chatName!',
-            'timestamp': FieldValue.serverTimestamp(),
-            'isMine': false,
-          });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Created chat: $chatName')));
+      if (chatId != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Created chat: $chatName')));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to create chat')));
+      }
     } catch (e) {
       print('Error creating new chat: $e');
       ScaffoldMessenger.of(
