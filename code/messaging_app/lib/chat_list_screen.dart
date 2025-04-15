@@ -92,16 +92,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
       final success = await _backendService.updateChatName(chatId, newName);
 
       if (success) {
+        await _loadChats(); // Refresh the chat list
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Chat renamed to "$newName"')));
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Failed to rename chat')));
       }
     } catch (e) {
       print('Error updating chat name: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Failed to rename chat')));
@@ -135,16 +139,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
         final success = await _backendService.deleteChat(chatId);
 
         if (success) {
+          setState(() {
+            _chats.removeWhere((chat) => chat['id'] == chatId);
+          });
+          if (!mounted) return;
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Chat deleted')));
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to delete chat')),
           );
         }
       } catch (e) {
         print('Error deleting chat: $e');
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Failed to delete chat')));
@@ -237,7 +247,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
               );
             },
             onDismissed: (direction) async {
-              await _confirmDeleteChat(chatId);
+              try {
+                final success = await _backendService.deleteChat(chatId);
+                if (success) {
+                  setState(() {
+                    _chats.removeWhere((chat) => chat['id'] == chatId);
+                  });
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Chat deleted')));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to delete chat')),
+                  );
+                }
+              } catch (e) {
+                print('Error deleting chat: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to delete chat')),
+                );
+              }
             },
             child: GestureDetector(
               onLongPress: () {
@@ -266,9 +295,37 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               "Delete Chat",
                               style: TextStyle(color: Colors.red),
                             ),
-                            onTap: () {
+                            onTap: () async {
                               Navigator.pop(dialogContext);
-                              _confirmDeleteChat(chatId);
+                              try {
+                                final success = await _backendService
+                                    .deleteChat(chatId);
+                                if (success) {
+                                  setState(() {
+                                    _chats.removeWhere(
+                                      (chat) => chat['id'] == chatId,
+                                    );
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Chat deleted'),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to delete chat'),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                print('Error deleting chat: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to delete chat'),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ],
@@ -415,16 +472,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
       final chatId = await _backendService.createChat(chatName);
 
       if (chatId != null) {
+        await _loadChats(); // Refresh the chat list
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Created chat: $chatName')));
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Failed to create chat')));
       }
     } catch (e) {
       print('Error creating new chat: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Failed to create chat')));
