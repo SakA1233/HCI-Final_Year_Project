@@ -15,10 +15,11 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final TextToSpeechService _tts = TextToSpeechService();
   final TextEditingController _chatNameController = TextEditingController();
   final BackendService _backendService = BackendService();
+  bool _isLoading = false;
+  List<Map<String, dynamic>> _chats = [];
 
   // Keep track of which bottom nav tab is selected
   int _currentIndex = 0;
@@ -27,6 +28,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void initState() {
     super.initState();
     _initTts();
+    _loadChats();
   }
 
   @override
@@ -150,166 +152,180 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  // Simple method: show chat list if index=0, else show a profile placeholder or settings
+  Future<void> _loadChats() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final chats = await _backendService.fetchChats();
+      if (!mounted) return;
+
+      setState(() {
+        _chats = chats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading chats: $e');
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load chats: $e'),
+          action: SnackBarAction(label: 'Retry', onPressed: _loadChats),
+        ),
+      );
+    }
+  }
+
+  // Simple method: show chat list if index=0, else show settings
   Widget _buildBody() {
     if (_currentIndex == 0) {
-      return StreamBuilder<QuerySnapshot>(
-        stream:
-            firestore
-                .collection('conversations')
-                .orderBy('timestamp', descending: true)
-                .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No conversations yet.'));
-          }
+      if (_isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-          var chats = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: chats.length,
-            itemBuilder: (context, index) {
-              var chat = chats[index];
-              var data = chat.data() as Map<String, dynamic>;
+      if (_chats.isEmpty) {
+        return const Center(child: Text('No conversations yet.'));
+      }
 
-              bool isUnread = data['unread'] ?? false;
-              String conversationName = data['name'] ?? 'Unnamed Chat';
-              String lastMessage = data['lastMessage'] ?? 'No messages yet';
+      return ListView.builder(
+        itemCount: _chats.length,
+        itemBuilder: (context, index) {
+          final chat = _chats[index];
+          final String chatId = chat['id'] ?? '';
+          final bool isUnread = chat['unread'] ?? false;
+          final String conversationName = chat['name'] ?? 'Unnamed Chat';
+          final String lastMessage = chat['lastMessage'] ?? 'No messages yet';
 
-              return Dismissible(
-                key: Key(chat.id),
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                direction: DismissDirection.endToStart,
-                confirmDismiss: (direction) async {
-                  return await showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text("Confirm"),
-                        content: const Text(
-                          "Are you sure you want to delete this chat?",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text("Cancel"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text("Delete"),
-                          ),
-                        ],
-                      );
-                    },
+          return Dismissible(
+            key: Key(chatId),
+            background: Container(
+              color: Colors.red,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20.0),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (direction) async {
+              return await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text("Confirm"),
+                    content: const Text(
+                      "Are you sure you want to delete this chat?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text("Delete"),
+                      ),
+                    ],
                   );
                 },
-                onDismissed: (direction) async {
-                  await _confirmDeleteChat(chat.id);
-                },
-                child: GestureDetector(
-                  onLongPress: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext dialogContext) {
-                        return AlertDialog(
-                          title: const Text("Chat Options"),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                leading: const Icon(Icons.edit),
-                                title: const Text("Edit Name"),
-                                onTap: () {
-                                  Navigator.pop(dialogContext);
-                                  _showEditChatNameDialog(
-                                    chat.id,
-                                    conversationName,
-                                  );
-                                },
-                              ),
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                title: const Text(
-                                  "Delete Chat",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(dialogContext);
-                                  _confirmDeleteChat(chat.id);
-                                },
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogContext),
-                              child: const Text("Cancel"),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  child: ListTile(
-                    title: Text(
-                      conversationName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      lastMessage,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing:
-                        isUnread
-                            ? const Icon(
-                              Icons.circle,
-                              color: Colors.blue,
-                              size: 10,
-                            )
-                            : null,
-                    onTap: () async {
-                      // Speak the conversation name if TTS is enabled
-                      _speakIfEnabled("Opening chat with $conversationName");
-
-                      try {
-                        // Mark as read before navigating
-                        await firestore
-                            .collection('conversations')
-                            .doc(chat.id)
-                            .update({'unread': false});
-
-                        // Navigate to conversation screen
-                        if (!mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    ChatConversationScreen(chatId: chat.id),
-                          ),
-                        );
-                      } catch (e) {
-                        print('Error updating unread status: $e');
-                      }
-                    },
-                  ),
-                ),
               );
             },
+            onDismissed: (direction) async {
+              await _confirmDeleteChat(chatId);
+            },
+            child: GestureDetector(
+              onLongPress: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext dialogContext) {
+                    return AlertDialog(
+                      title: const Text("Chat Options"),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.edit),
+                            title: const Text("Edit Name"),
+                            onTap: () {
+                              Navigator.pop(dialogContext);
+                              _showEditChatNameDialog(chatId, conversationName);
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            title: const Text(
+                              "Delete Chat",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            onTap: () {
+                              Navigator.pop(dialogContext);
+                              _confirmDeleteChat(chatId);
+                            },
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text("Cancel"),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: ListTile(
+                title: Text(
+                  conversationName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  lastMessage,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing:
+                    isUnread
+                        ? const Icon(Icons.circle, color: Colors.blue, size: 10)
+                        : null,
+                onTap: () async {
+                  // Speak the conversation name if TTS is enabled
+                  _speakIfEnabled("Opening chat with $conversationName");
+
+                  try {
+                    // Mark as read using backend service
+                    await _backendService.updateChatName(
+                      chatId,
+                      conversationName,
+                    );
+
+                    // Navigate to conversation screen
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => ChatConversationScreen(chatId: chatId),
+                      ),
+                    ).then((_) => _loadChats()); // Refresh list when returning
+                  } catch (e) {
+                    print('Error updating unread status: $e');
+                  }
+                },
+              ),
+            ),
           );
         },
       );
