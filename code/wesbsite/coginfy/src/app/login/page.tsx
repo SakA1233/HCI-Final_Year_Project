@@ -26,6 +26,8 @@ export default function LoginPage() {
       );
       // Save user data and redirect to play page
       localStorage.setItem("user", JSON.stringify(response.data.user));
+      // Dispatch custom event for same-tab updates
+      window.dispatchEvent(new Event('loginStateChange'));
       router.push("/play");
     } catch (err: any) {
       // Show error if login fails
