@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'text_to_speech_service.dart';
 import 'backend_service.dart';
+import 'dart:async';
 
 class ChatConversationScreen extends StatefulWidget {
   final String chatId;
@@ -20,17 +21,29 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextToSpeechService _tts = TextToSpeechService();
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
+  Timer? _refreshTimer;
+  bool _isRefreshing = false;
+  int _errorCount = 0;
+  static const int _maxErrorCount = 3;
+  static const Duration _refreshInterval = Duration(seconds: 3);
 
   @override
   void initState() {
     super.initState();
     _initTts();
     _loadMessages();
+    // Set up periodic refresh with a longer interval
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      if (mounted && !_isRefreshing && _errorCount < _maxErrorCount) {
+        _loadMessages();
+      }
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -57,21 +70,69 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Future<void> _loadMessages() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    print('Starting to load messages...');
 
     try {
       final messages = await _backendService.fetchMessages(widget.chatId);
-      setState(() {
-        _messages = messages;
-        _isLoading = false;
-      });
+      print('Fetched ${messages.length} messages from backend service');
+
+      if (mounted) {
+        setState(() {
+          // Only update messages if we received new ones (not a 304 response)
+          if (messages.isNotEmpty) {
+            _messages = messages;
+            print('Updated state with ${_messages.length} messages');
+          } else {
+            print(
+              'No new messages, keeping existing ${_messages.length} messages',
+            );
+          }
+          _isLoading = false;
+          _errorCount = 0; // Reset error count on successful fetch
+        });
+      }
     } catch (e) {
       print('Error loading messages: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorCount++;
+          print('Error count increased to: $_errorCount');
+        });
+
+        // Only show error message if we haven't exceeded the max error count
+        if (_errorCount < _maxErrorCount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load messages. Retrying...'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else if (_errorCount == _maxErrorCount) {
+          // Show final error message when max errors reached
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Connection issues detected. Pull down to refresh.',
+              ),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () {
+                  _errorCount = 0;
+                  _loadMessages();
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        _isRefreshing = false;
+      }
     }
   }
 
@@ -81,38 +142,68 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     _messageController.clear();
 
-    // Add message to UI
+    // Immediately add the message to the UI with a temporary ID
+    final temporaryMessage = {
+      'id': 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      'text': messageText,
+      'timestamp': DateTime.now().toIso8601String(),
+      'isMine': true,
+    };
+
     setState(() {
-      _messages.insert(0, {
-        'text': messageText,
-        'timestamp': DateTime.now().toIso8601String(),
-        'isMine': true,
-      });
+      _messages = [temporaryMessage, ..._messages];
     });
 
     try {
-      // Send through backend instead of directly to Firestore
       final success = await _backendService.sendMessage(
         widget.chatId,
         messageText,
       );
 
-      if (!success) {
-        // Handle failure - show an error and retry option
+      if (success) {
+        // Reset error count and load messages to get the bot's response
+        _errorCount = 0;
+        _loadMessages();
+      } else {
+        // Remove the temporary message if sending failed
+        setState(() {
+          _messages.removeWhere((msg) => msg['id'] == temporaryMessage['id']);
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send message. Tap to retry.'),
             action: SnackBarAction(
               label: 'Retry',
-              onPressed:
-                  () => _backendService.sendMessage(widget.chatId, messageText),
+              onPressed: () {
+                _backendService.sendMessage(widget.chatId, messageText).then((
+                  success,
+                ) {
+                  if (success) {
+                    _loadMessages();
+                  }
+                });
+              },
             ),
           ),
         );
       }
     } catch (e) {
+      // Remove the temporary message if sending failed
+      setState(() {
+        _messages.removeWhere((msg) => msg['id'] == temporaryMessage['id']);
+      });
+
       print('Error sending message: $e');
-      // Show error to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending message. Please try again.'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _sendMessage(),
+          ),
+        ),
+      );
     }
   }
 
@@ -124,12 +215,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       appBar: AppBar(title: const Text('Chat Conversation')),
       body: Column(
         children: [
-          // Display messages
           Expanded(
-            child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildMessageList(themeProvider),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                _errorCount = 0; // Reset error count on manual refresh
+                await _loadMessages();
+              },
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildMessageList(themeProvider),
+            ),
           ),
 
           // Message input field

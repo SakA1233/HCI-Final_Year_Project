@@ -21,8 +21,7 @@ try {
 }
 
 // Encryption Constants
-const ENCRYPTION_KEY = Buffer.from('1fe7f3a7fc258225635b3562884d46473175a913ef02c18a24b825f7e54cfb7d', 'hex'); // 32 bytes for AES-256
-// Debug check: must be length 32
+const ENCRYPTION_KEY = Buffer.from('eea861fd2850a75153141d97e58e75fffc26e0c19bac160693dfa13f179e15c1', 'hex'); // 32 bytes for AES-256
 console.log("ENCRYPTION_KEY (hex):", ENCRYPTION_KEY.toString("hex"));
 console.log("ENCRYPTION_KEY length:", ENCRYPTION_KEY.length);
 
@@ -121,20 +120,85 @@ app.post("/send-message", verifyIdToken, async (req, res) => {
     });
     console.log("Message stored in Firestore");
 
-    // Update conversation metadata
+    // Update conversation metadata with decrypted last message
     await admin.firestore().collection("conversations").doc(chatId).update({
-      lastMessage: "Encrypted message",
+      lastMessage: text,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       unread: true,
     });
     console.log("Conversation metadata updated");
 
-    res.json({ success: true, messageId: messageRef.id });
+    // Generate bot response
+    const botResponse = generateBotResponse(text);
+    console.log("Generated bot response:", botResponse);
+
+    // Add a small delay before sending bot response
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Encrypt and store bot response
+    const botEncrypted = encrypt(botResponse);
+    const botMessageRef = admin
+      .firestore()
+      .collection("conversations")
+      .doc(chatId)
+      .collection("messages")
+      .doc();
+
+    await botMessageRef.set({
+      ciphertext: botEncrypted.data,
+      iv: botEncrypted.iv,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      isMine: false,
+      userId: 'bot',
+    });
+
+    // Update conversation metadata for bot response
+    await admin.firestore().collection("conversations").doc(chatId).update({
+      lastMessage: botResponse,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      unread: true,
+    });
+
+    res.json({ 
+      success: true, 
+      messageId: messageRef.id,
+      botMessageId: botMessageRef.id 
+    });
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ error: "Server error", details: error.message });
   }
 });
+
+// Bot response generation
+function generateBotResponse(userMessage) {
+  userMessage = userMessage.toLowerCase();
+
+  // Simple responses
+  if (userMessage.includes('hello') || userMessage.includes('hi')) {
+    return 'Hello there! How can I help you today?';
+  } else if (userMessage.includes('how are you')) {
+    return 'I\'m doing well, thank you for asking! How about you?';
+  } else if (userMessage.includes('help')) {
+    return 'I\'m here to help! You can ask me about the app, or just chat with me.';
+  } else if (userMessage.includes('thank')) {
+    return 'You\'re welcome! Is there anything else I can help with?';
+  } else if (userMessage.includes('bye') || userMessage.includes('goodbye')) {
+    return 'Goodbye! Have a great day!';
+  } else {
+    // Default responses
+    const defaultResponses = [
+      'That\'s interesting! Tell me more.',
+      'I understand. What else is on your mind?',
+      'I see. How can I help with that?',
+      'Thanks for sharing that with me.',
+      'I\'m processing what you said. Can you elaborate?',
+    ];
+
+    // Return a random default response
+    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+  }
+}
 
 // Fetch messages endpoint
 app.get("/messages/:chatId", verifyIdToken, async (req, res) => {
@@ -142,6 +206,7 @@ app.get("/messages/:chatId", verifyIdToken, async (req, res) => {
     console.log("Received fetch messages request for chat:", req.params.chatId);
     const { chatId } = req.params;
     const userId = req.user.uid;
+    const lastTimestamp = req.headers['if-modified-since'];
 
     const snapshot = await admin
       .firestore()
@@ -177,6 +242,16 @@ app.get("/messages/:chatId", verifyIdToken, async (req, res) => {
           : new Date().toISOString(),
         isMine: data.userId === userId || data.isMine === true,
       };
+    });
+
+    // If If-Modified-Since header is present and no new messages
+    if (lastTimestamp && messages.length > 0 && messages[0].timestamp <= lastTimestamp) {
+      return res.status(304).send();
+    }
+
+    // Mark conversation as read
+    await admin.firestore().collection("conversations").doc(chatId).update({
+      unread: false,
     });
 
     res.json({ messages });
@@ -253,30 +328,44 @@ app.delete("/delete-chat/:chatId", verifyIdToken, async (req, res) => {
     console.log("Received delete-chat request for chat:", req.params.chatId);
     const { chatId } = req.params;
 
-    // Delete all messages
-    const messagesSnapshot = await admin
-      .firestore()
-      .collection("conversations")
-      .doc(chatId)
-      .collection("messages")
-      .get();
-
-    console.log(`Deleting ${messagesSnapshot.docs.length} messages`);
-
-    // Batched delete
-    const batch = admin.firestore().batch();
-    messagesSnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
-    // Delete the main doc
-    batch.delete(admin.firestore().collection("conversations").doc(chatId));
-    await batch.commit();
-    console.log("Chat and messages deleted");
+    // Delete the chat document and all its messages
+    await admin.firestore().collection("conversations").doc(chatId).delete();
+    console.log("Chat deleted");
 
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting chat:", error);
+    res.status(500).json({ error: "Server error", details: error.message });
+  }
+});
+
+// Fetch all chats endpoint
+app.get("/chats", verifyIdToken, async (req, res) => {
+  try {
+    console.log("Received fetch chats request");
+    const userId = req.user.uid;
+
+    const snapshot = await admin
+      .firestore()
+      .collection("conversations")
+      .orderBy("timestamp", "desc")
+      .get();
+
+    console.log(`Retrieved ${snapshot.docs.length} chats`);
+
+    const chats = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      name: doc.data().name || "Unnamed Chat",
+      lastMessage: doc.data().lastMessage || "No messages yet",
+      timestamp: doc.data().timestamp
+        ? doc.data().timestamp.toDate().toISOString()
+        : new Date().toISOString(),
+      unread: doc.data().unread || false,
+    }));
+
+    res.json({ chats });
+  } catch (error) {
+    console.error("Error fetching chats:", error);
     res.status(500).json({ error: "Server error", details: error.message });
   }
 });
