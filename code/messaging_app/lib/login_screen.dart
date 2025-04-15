@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'chat_list_screen.dart';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -16,12 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final isHighContrast = themeProvider.isHighContrast;
+
     return Scaffold(
-      // Keep the light background color
-      backgroundColor: Colors.white,
-      // Center the entire view
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
-        // Scroll view for smaller screens
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
           child: Column(
@@ -33,15 +36,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.lightBlue[700],
+                  color:
+                      isHighContrast
+                          ? (isDark ? Colors.white : Colors.black)
+                          : Colors.lightBlue[700],
                 ),
               ),
               const SizedBox(height: 16.0),
 
               // Caption
-              const Text(
+              Text(
                 'Empowering Conversations',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
+                ),
               ),
               const SizedBox(height: 40.0),
 
@@ -49,11 +58,17 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'example@domain.com',
-                  prefixIcon: const Icon(Icons.email),
+                  prefixIcon: Icon(
+                    Icons.email,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
@@ -65,11 +80,17 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock),
+                  prefixIcon: Icon(
+                    Icons.lock,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
@@ -123,8 +144,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                           },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlue,
-                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        isHighContrast
+                            ? (isDark ? Colors.white : Colors.black)
+                            : Colors.lightBlue,
+                    foregroundColor:
+                        isHighContrast
+                            ? (isDark ? Colors.black : Colors.white)
+                            : Colors.white,
                     textStyle: const TextStyle(fontSize: 18),
                     padding: const EdgeInsets.symmetric(vertical: 12.0),
                     shape: RoundedRectangleBorder(
@@ -181,8 +208,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                           },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlue[300],
-                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        isHighContrast
+                            ? (isDark ? Colors.grey[300] : Colors.grey[700])
+                            : Colors.lightBlue[300],
+                    foregroundColor:
+                        isHighContrast
+                            ? (isDark ? Colors.black : Colors.white)
+                            : Colors.white,
                     textStyle: const TextStyle(fontSize: 18),
                     padding: const EdgeInsets.symmetric(vertical: 12.0),
                     shape: RoundedRectangleBorder(
@@ -196,13 +229,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Divider
               Row(
-                children: const [
-                  Expanded(child: Divider(thickness: 1)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('OR'),
+                children: [
+                  Expanded(
+                    child: Divider(
+                      thickness: 1,
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                    ),
                   ),
-                  Expanded(child: Divider(thickness: 1)),
                 ],
               ),
               const SizedBox(height: 24.0),
@@ -217,7 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? null
                           : () async {
                             setState(() => _isLoading = true);
-                            // Loading
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -251,13 +283,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                   label: const Text('Sign in with Google'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
+                    backgroundColor: isDark ? Colors.grey[800] : Colors.white,
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
                     textStyle: const TextStyle(fontSize: 18),
                     padding: const EdgeInsets.symmetric(vertical: 12.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
-                      side: const BorderSide(color: Colors.black12),
+                      side: BorderSide(
+                        color: isDark ? Colors.grey[600]! : Colors.black12,
+                      ),
                     ),
                   ),
                 ),
@@ -265,9 +299,12 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20.0),
 
               Text(
-                'By continuing, you agree to Lumina’s Terms and Privacy Policy.',
+                'By continuing, you agree to our Terms and Privacy Policy',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
