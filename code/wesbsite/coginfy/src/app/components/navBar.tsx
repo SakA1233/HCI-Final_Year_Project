@@ -11,14 +11,30 @@ const NavbarComponent = () => {
 
   // Load user authentication & dark mode state
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    setIsLoggedIn(!!user);
+    const checkLoginStatus = () => {
+      const user = localStorage.getItem("user");
+      setIsLoggedIn(!!user);
+    };
+
+    // Check initial status
+    checkLoginStatus();
+
+    // Add event listener for storage changes (other tabs)
+    window.addEventListener('storage', checkLoginStatus);
+
+    // Create a custom event listener for same-tab changes
+    window.addEventListener('loginStateChange', checkLoginStatus);
 
     const theme = localStorage.getItem("theme");
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
       setDarkMode(true);
     }
+
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+      window.removeEventListener('loginStateChange', checkLoginStatus);
+    };
   }, []);
 
   // Toggle Dark Mode
@@ -31,6 +47,14 @@ const NavbarComponent = () => {
       localStorage.setItem("theme", "dark");
     }
     setDarkMode(!darkMode);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    // Dispatch custom event for same-tab updates
+    window.dispatchEvent(new Event('loginStateChange'));
+    router.push("/login");
   };
 
   return (
@@ -55,12 +79,8 @@ const NavbarComponent = () => {
           {isLoggedIn ? (
             <li>
               <button
-                onClick={() => {
-                  localStorage.removeItem("user");
-                  setIsLoggedIn(false);
-                  router.push("/login");
-                }}
-                className="text-red-500 hover:underline dark:text-red-400"
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 hover:underline"
               >
                 Log Out
               </button>
