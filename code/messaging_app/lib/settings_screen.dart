@@ -4,9 +4,15 @@ import 'theme_provider.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import 'text_to_speech_service.dart';
+import 'voice_command_service.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'mock_voice_command_service.dart';
+import 'backend_service.dart';
+import 'chat_conversation_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -15,6 +21,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextToSpeechService _tts = TextToSpeechService();
   final AuthService _authService = AuthService();
+  final BackendService _backendService = BackendService();
 
   // Text size options
   final List<Map<String, dynamic>> textSizeOptions = [
@@ -52,6 +59,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
     );
+  }
+
+  // Method to handle opening or creating John's chat
+  Future<void> _openChatWithJohn() async {
+    try {
+      // First try to find an existing chat with John
+      final chats = await _backendService.fetchChats();
+      final johnChat = chats.firstWhere(
+        (chat) => chat['name'].toString().toLowerCase().contains('john'),
+        orElse: () => {},
+      );
+
+      String chatId;
+      if (johnChat.isEmpty) {
+        // Create a new chat for John if none exists
+        chatId = await _backendService.createChat('Chat with John') ?? '';
+        if (chatId.isEmpty) {
+          throw Exception('Failed to create chat with John');
+        }
+      } else {
+        chatId = johnChat['id'];
+      }
+
+      // Navigate to the chat conversation
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatConversationScreen(chatId: chatId),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to open chat with John. Please try again.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -207,6 +253,144 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: Colors.grey[600],
                   ),
                 ),
+              ],
+            ),
+          ),
+
+        // Voice Commands Toggle
+        _buildSwitchTile(
+          title: 'Voice Commands',
+          subtitle: 'Enable voice input and commands',
+          value: themeProvider.isVoiceCommandsEnabled,
+          onChanged: (value) {
+            themeProvider.toggleVoiceCommands();
+          },
+        ),
+
+        // If voice commands are enabled, show a test button
+        if (themeProvider.isVoiceCommandsEnabled)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    // Check if we're on iOS simulator
+                    final bool isSimulator = Platform.isIOS && kDebugMode;
+
+                    if (isSimulator) {
+                      final mockService = MockVoiceCommandService();
+                      await mockService.initialize();
+
+                      // Start listening with mock service
+                      await mockService.startListening(
+                        onResult: (String text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Recognized: $text'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+
+                          // Process the command
+                          mockService.processCommand(
+                            text,
+                            context,
+                            onGoToSettings: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Already in settings!'),
+                                ),
+                              );
+                            },
+                            onOpenChatWithJohn: () async {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Opening chat with John...'),
+                                ),
+                              );
+                              await _openChatWithJohn();
+                            },
+                          );
+                        },
+                      );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Started listening (mock)...'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    } else {
+                      final voiceService = VoiceCommandService();
+                      await voiceService.initialize();
+
+                      // Start listening with real service
+                      await voiceService.startListening(
+                        onResult: (String text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Recognized: $text'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+
+                          // Process the command
+                          voiceService.processCommand(
+                            text,
+                            context,
+                            onGoToSettings: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Already in settings!'),
+                                ),
+                              );
+                            },
+                            onOpenChatWithJohn: () async {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Opening chat with John...'),
+                                ),
+                              );
+                              await _openChatWithJohn();
+                            },
+                          );
+                        },
+                      );
+
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Started listening...'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Test Voice Commands'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Available commands: "go to settings", "open chat with john"',
+                  style: TextStyle(
+                    fontSize: 12 * themeProvider.textScaleFactor,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                // Show note about simulator if applicable
+                if (Platform.isIOS && kDebugMode)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Note: Running on iOS simulator - using mock voice commands',
+                      style: TextStyle(
+                        fontSize: 12 * themeProvider.textScaleFactor,
+                        color: Colors.orange[800],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
