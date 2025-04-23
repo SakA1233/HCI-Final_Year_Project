@@ -37,3 +37,35 @@ Week 11 (3rd - 8th Dec):
 
 Week 12 (9th - 12th Dec):
 Finalised the integration of the login system. Polished structure of site. Completed interim report, ensuring all sections related to accessibility, usability, and HCI research are detailed and aligned with project goals.
+
+Term 2:
+
+Weeks 1–2
+Researched the Flutter framework and its relevance to accessible design. Studied documentation and followed tutorials to gain a solid understanding of widgets, state management, and theming. Also completed dark mode integration for the Cognify website, including theme toggling and colour contrast checks.
+
+Week 3
+Set up the development environment for the Lumina messaging app. Configured Flutter and Firebase integration. Began working on user authentication with email sign-in using Firebase Auth.
+
+Week 4
+Implemented real-time chat functionality using Firestore. Developed chat list and conversation screens. Introduced a chatbot to simulate message exchange due to the limitation of testing on two devices (iOS developer membership not acquired).
+
+Week 5
+Built features for editing and deleting messages. Introduced theme switching via a theme provider setup. Created a settings screen and implemented text scaling and dark/light theme toggle.
+
+Week 6
+Completed the text resizing slider using Flutter’s accessibility features. Added a mock voice command system and functional text-to-speech component. Linked these to the accessibility settings panel.
+
+Week 7
+Improved chatbot integration and secured message delivery with client-side encryption. Enhanced backend services and added robust error handling throughout the app for debugging and stability.
+
+Week 8
+Polished UI layout including chat bubble alignment, colour usage, and navigation headers. Integrated a simple navbar using icons and labels. Added notification feedback for message status updates.
+
+Week 9
+Connected settings preferences to live previews, allowing instant visual changes for font size and theme. Completed development of Lumina’s core features and prepared the post-development questionnaire.
+
+Week 10
+Conducted user testing with elderly participants. Collected feedback on usability and accessibility features such as text size, colour contrast, and real-time communication elements. Documented results for reporting.
+
+Week 11
+Focused on compiling the final report. Analysed user feedback, summarised technical and design decisions, and reflected on challenges. Finalised both the Cognify website and Lumina messaging app. Completed editing and submitted the full project.
