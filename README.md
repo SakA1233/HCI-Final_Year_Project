@@ -60,18 +60,18 @@ This project explores accessibility and usability for elderly users by developin
 #### Steps to Run
 
 1. Clone the repository:
-   git clone https://gitlab.cim.rhul.ac.uk/zlac406/PROJECT.git
-
+   git clone https://github.com/SakA1233/HCI-Final_Year_Project.git
+   
    cd cognify
    npm install
 
-2. Install dependencies:
+3. Install dependencies:
    npm install
 
-3. Create a .env.local file in the root directory and add your environment variables:
+4. Create a .env.local file in the root directory and add your environment variables:
    MONGODB_URI
 
-4. Start the development server for backend and frontend:
+5. Start the development server for backend and frontend:
    npm run dev
 
 Lumina Messaging App
@@ -101,7 +101,7 @@ Git
 ### Steps to Run
 
 1. Clone the repository:
-   git clone https://gitlab.cim.rhul.ac.uk/zlac406/PROJECT.git
+   git clone https://github.com/SakA1233/HCI-Final_Year_Project.git
 
 2. Install dependencies:
    flutter pub get
@@ -124,4 +124,4 @@ This project uses open-source libraries. Ensure you follow individual licensing 
 Sakariya Aden
 Royal Holloway, University of London
 Supervisor: [Gregory Gutin]
-Email: [zlac406@live.rhul.ac.uk]
+Email: [adensakariya@gmail.com]
